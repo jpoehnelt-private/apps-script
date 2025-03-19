@@ -1,0 +1,13 @@
+{
+  "name": "@types/buganizer",
+  "version": "0.1.0",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "author": "Justin Poehnelt <jpoehnelt@google.com>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "private": true,
+  "main": "",
+  "types": "./src/index.d.ts"
+}
