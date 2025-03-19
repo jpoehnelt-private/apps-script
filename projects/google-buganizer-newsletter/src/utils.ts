@@ -1,4 +1,4 @@
-export function serializeBug(bug: BuganizerApp.Bug) {
+export function serializeBug(bug: GoogleAppsScript.Buganizer.Bug) {
     const title = bug.getSummary();
     const description = bug.getFirstNote();
     return `Id: ${bug.getId()}\nVote Count: ${bug.getMeTooCount()}\nTitle: ${title}\nCurrent Component: ${bug.getComponentPath().join("/")}\nDescription:\n\n${description}`

@@ -8,15 +8,17 @@
   },
   "author": "Justin Poehnelt <justin.poehnelt@gmail.com>",
   "license": "Apache-2.0",
+  "dependencies": {
+    "@repository/buganizer-utils": "workspace:*",
+    "date-fns": "^4.1.0"
+  },
   "devDependencies": {
     "@google/clasp": "^3.0.2-alpha",
     "@types/google-apps-script": "^1.0.97",
     "@types/mjml-browser": "^4.15.0",
+    "@types/buganizer": "workspace:*",
     "esbuild": "^0.25.0"
   },
   "type": "module",
-  "dependencies": {
-    "date-fns": "^4.1.0"
-  },
   "private": true
 }
