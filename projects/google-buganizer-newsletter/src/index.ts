@@ -1,9 +1,7 @@
 import { intlFormatDistance } from "date-fns";
-import { BuganizerQuery, sortByVotes, WorkspaceQuery } from "@repository/buganizer-utils";
+import { BuganizerQuery, sortByVotes, WorkspaceQuery, getBugUserEvents } from "@repository/buganizer-utils";
 
-function searchAndSort(query: string, limit: number): GoogleAppsScript.Buganizer.Bug[] {
-    return BuganizerApp.searchBugs(`-componentid:191645+ ${query}`).sort((a, b) => b.getMeTooCount() - a.getMeTooCount()).slice(0, limit);
-}
+const ROOT_COMPONENT_ID = 191625;
 
 const IGNORED_COMPONENTS = [
     "191651", // Sites API
@@ -27,28 +25,28 @@ const tables: {
             title: 'Recent Notable Issues'
         },
         {
-            query: OPEN_QUERY.and(`votecount>300`),
+            query: OPEN_QUERY.and(`votecount>300`).isFeatureRequest(),
             limit: 10,
             description: 'These are the issues having the most votes.',
-            title: 'Notable Open Issues'
+            title: 'Popular Feature Requests'
         },
         {
             query: new BuganizerQuery(`status:open hotlistid:5181049 -status:duplicate`),
             limit: 10,
             description: 'These are the bugs that are currently blocking the corresponding public issue.',
-            title: 'Blocked By'
+            title: 'Internal Bugs and Feature Requests Blocking Public Issues'
         },
     ];
 
 const componentTables = rootComponent.getChildComponents(false).filter(c => !IGNORED_COMPONENTS.includes(c.getId().toString())).map(c => ({
-    query: RECENT_QUERY.and(`componentid:${c.getId()}+ votecount>0 -status:duplicate -status:obsolete`),
+    query: RECENT_QUERY.and(`componentid:${c.getId()}+ votecount>0 -status:duplicate -status:obsolete`).minQuality(5),
     limit: 10,
     description: `These are the issues having the most votes in the last 30 days for ${c.getName()}.`,
     title: `${c.getName()} Issues`
 }));
 
 function stats() {
-    const bugs = searchAndSort(RECENT_QUERY.and(`votecount>1 -status:duplicate`).toString(), 1000);
+    const bugs = RECENT_QUERY.and(`votecount>1 -status:duplicate`).search();
     const tagNames = bugs.flatMap(b => {
         const tagsField = b.getAllCustomFields().find(f => f.getName() === 'tags');
         return tagsField?.getRepeatedValue().map(v => v.replace(/-api$/g, '')) || [];
@@ -59,22 +57,24 @@ function stats() {
     }, {} as Record<string, number>);
     const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
 
-    const componentNames = bugs.flatMap(b => [b.getComponentPath()[2]]);
-    const componentCounts = componentNames.reduce((acc, component) => {
-        acc[component] = (acc[component] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-    const sortedComponents = Object.entries(componentCounts).sort((a, b) => b[1] - a[1]);
+    const componentsIds = bugs.map(b => b.getComponentId()).filter(Number);
+    const componentCounts = componentsIds.reduce((acc, id) => {
+        let component = BuganizerApp.getComponentById(id);
 
-    const assignees = bugs.flatMap(b => b.getAssignee()).filter(Boolean).map(a => a.split('@')[0]);
-    const assigneeCounts = assignees.reduce((acc, assignee) => {
-        acc[assignee] = (acc[assignee] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-    const sortedAssignees = Object.entries(assigneeCounts).sort((a, b) => b[1] - a[1]);
+        while (component.getId() !== String(ROOT_COMPONENT_ID) && component.getParentId() !== String(ROOT_COMPONENT_ID)) {
+            component = BuganizerApp.getComponentById(Number(component.getParentId()));
+        }
 
-    const userEvents = BuganizerApp.getHistoryForBugIds(bugs.map(b => b.getId())).flatMap(h => h.getHistory().map(event => event.getUserPerformingAction()));
-    const activeUsers = new Set(userEvents);
+        const name = component.getName();
+        if (!acc[name]) {
+            acc[name] = { count: 0, componentId: component.getId() };
+        }
+        acc[name].count += 1;
+        return acc;
+    }, {} as Record<string, { count: number, componentId: string }>);
+    const sortedComponents = Object.entries(componentCounts).sort((a, b) => b[1].count - a[1].count);
+
+    const activeUsers = new Set(getBugUserEvents(bugs.map(b => b.getId())));
 
     const userDomains = Array.from(
         new Set(Array
@@ -91,42 +91,29 @@ function stats() {
         return acc;
     }, {} as Record<string, string[]>);
 
-    const userEventCounts = userEvents.filter(u => u.endsWith('@google.com')).map(a => a.split('@')[0]).reduce((acc, user) => {
-        acc[user] = (acc[user] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-    const sortedUserEventCounts = Object.entries(userEventCounts).sort((a, b) => b[1] - a[1]);
-
     return {
         tags: sortedTags,
         components: sortedComponents,
-        assignees: sortedAssignees,
         userDomainsGroupedByTld,
-        sortedUserEventCounts,
     };
-}
-
-function queryLink(q: BuganizerQuery): string {
-    return `http://b/?q=${encodeURIComponent(q.toString())}`
 }
 
 const BLUE = '#4285F4';
 const WHITE = '#ffffff';
 
 function buildHtml(): string {
-
-    const { tags, components, assignees, userDomainsGroupedByTld, sortedUserEventCounts } = stats();
-
+    const { tags, components, userDomainsGroupedByTld } = stats();
     const input = `
 <mjml>
     <mj-head>
-        <mj-preview>An overview ofrecent Workspace Developer issues g/workspace-devrel-public-issues-reports</mj-preview>
+        <mj-preview>An overview of recent Workspace Developer issues g/workspace-developer-public-issues</mj-preview>
         <mj-title>Workspace Developer Issues</mj-title>
         <mj-breakpoint width="1400px" />
         <mj-style inline="inline">
             .title a {
                 color: inherit !important;
                 text-decoration: none !important;
+                font-weight: bold !important;
             }
             .button a, .navbar-link a {
                 color: white !important;
@@ -146,8 +133,9 @@ function buildHtml(): string {
         <mj-section background-color="${BLUE}" css-class="bg-blue">
             <mj-column>
                 <mj-text font-size="30px" color="${WHITE}">Workspace Developer Public Issues</mj-text>
-                <mj-text font-size="16px"color="${WHITE}" line-height="20px">An overview of the most recent public <a href="${RECENT_QUERY.b()}" target="_blank">Workspace Developer issues</a>. Subscribe at <a href="http://g/workspace-devrel-public-issues-reports" target="_blank">g/workspace-devrel-public-issues-reports</a>. Contact <a href="mailto:jpoehnelt@google.com" target="_blank">jpoehnelt@google.com</a> (<a href="http://who/jpoehnelt" target="_blank">who/jpoehnelt</a>) with questions or feedback.</mj-text>
-                </mj-column>
+                <mj-text font-size="16px" color="${WHITE}" line-height="20px">An overview of the most recent public <a href="${RECENT_QUERY.b()}" target="_blank">Workspace Developer issues</a>. Subscribe at <a href="http://g/workspace-developer-public-issues" target="_blank">g/workspace-developer-public-issues</a>. Contact <a href="mailto:jpoehnelt@google.com" target="_blank">jpoehnelt@google.com</a> (<a href="http://who/jpoehnelt" target="_blank">who/jpoehnelt</a>) with questions or feedback.</mj-text>
+                <mj-text font-size="16px" color="${WHITE}" line-height="20px">Rate this email: <a href="https://forms.gle/LYSsYTYV9w44rDWG7" target="_blank" style="text-decoration: none;">👍 👎</a></mj-text>
+            </mj-column>
             <mj-column>
                 <mj-text font-size="20px" color="${WHITE}">🕵️ Go Directly to Buganizer: </mj-text>
                <mj-navbar align="left" hamburger="hamburger" ico-color="${WHITE}">
@@ -164,31 +152,31 @@ function buildHtml(): string {
             return '';
         }
         return `<mj-divider/>
-                <mj-text css-class="title" font-size="20px">${t.title} - <code>${t.query}</code></mj-text>
+                <mj-text css-class="title" font-size="20px">${t.title}</mj-text>
                 ${bugTable(bugs)}
-                <mj-button><a href="${queryLink(t.query)}" target="_blank">👀 View More</a></mj-button>
+                <mj-button><a href="${t.query.link()}" target="_blank">👀 View More</a></mj-button>
                 `}).join('')}
               </mj-column>
             <mj-column width="20%">
                 <mj-divider/>
-                <mj-text font-size="20px">🌐 By Domain</mj-text>
+                <mj-text font-size="20px">🌐 Domains</mj-text>
                 <mj-text>These are the active domains <strong>in the last 30 days</strong>.</mj-text>
                 <mj-text>
                     ${Object.values(userDomainsGroupedByTld).map(domains => `<ul style="padding-left: 5px;">${domains.map(domain =>
             `<li style="margin: 2px;">${domain.replace(/\./g, '&#173;.')}</li>`).join('')}</ul>`).join('')}</mj-text>
                 <mj-divider/>
-                <mj-text font-size="20px">📚 By Components</mj-text>
+                <mj-text font-size="20px">📚 Components</mj-text>
                 <mj-text>These are the components with the most issues <strong>in the last 30 days</strong>.</mj-text>
                 <mj-text><ul style="padding-left: 5px;">
-                    ${components.slice(0, 10).map(([component, count]) =>
-                `<li style="margin: 2px;">${component} (${count})</li>`).join('')}
+                    ${components.slice(0, 10).map(([component, { count, componentId }]) =>
+                `<li style="margin: 2px;"><a href="${RECENT_QUERY.isComponent(componentId, true).link()}" target="_blank">${component} (${count})</a></li>`).join('')}
                 </ul></mj-text>
                 <mj-divider/>
-                <mj-text font-size="20px">🏷️ By Tags</mj-text>
+                <mj-text font-size="20px">🏷️ Tags</mj-text>
                 <mj-text>These are the tags having the most votes <strong>in the last 30 days</strong>.</mj-text>
                 <mj-text><ul style="padding-left: 5px;">
                     ${tags.slice(0, 10).map(([tag, count]) =>
-                    `<li style="margin: 2px;">${tag} (${count})</li>`).join('')}
+                    `<li style="margin: 2px;"><a href="${RECENT_QUERY.isTaggedWith(tag).isOpen().link()}" target="_blank">${tag} (${count})</a></li>`).join('')}
                 </ul></mj-text>
             </mj-column>
         </mj-section>
@@ -201,13 +189,13 @@ function buildHtml(): string {
                             return '';
                         }
                         return `<mj-divider/>
-                <mj-text css-class="title" font-size="20px">${t.title} - <code>${t.query}</code></mj-text>
+                <mj-text css-class="title" font-size="20px">${t.title}</mj-text>
                 ${bugTable(bugs)}
-                <mj-button><a href="${queryLink(t.query)}" target="_blank">👀 View More</a></mj-button>
+                <mj-button><a href="${t.query.link()}" target="_blank">👀 View More</a></mj-button>
                 `}).join('')}
               </mj-column>
             <mj-column width="20%">
-               <mj-text>Subscribe at <a href="http://g/workspace-devrel-public-issues-reports" target="_blank">g/workspace-devrel-public-issues-reports</a>. Contact <a href="mailto:jpoehnelt@google.com" target="_blank">jpoehnelt@google.com</a> (<a href="http://who/jpoehnelt" target="_blank">who/jpoehnelt</a>) with questions or feedback.</mj-text>
+               <mj-text>Subscribe at <a href="http://g/workspace-developer-public-issues" target="_blank">g/workspace-developer-public-issues</a>. Automate with blunderbuss at <a href="http://google3/production/tools/tickets/config/workspace-devrel/public-issue-tracker.cfg" target="_blank"><code>google3/production/tools/tickets/config/workspace-devrel/public-issue-tracker.cfg</code></a>. Contact <a href="mailto:jpoehnelt@google.com" target="_blank">jpoehnelt@google.com</a> (<a href="http://who/jpoehnelt" target="_blank">who/jpoehnelt</a>) with questions or feedback.</mj-text>
             </mj-column>
         </mj-section>
     </mj-body>
@@ -235,16 +223,14 @@ function bugTable(bugs: GoogleAppsScript.Buganizer.Bug[]) {
         <th style="${columnStyle}">Component</th>
         <th style="${columnStyle}">Title</th>
         <th style="${columnStyle}">Votes</th>
-        <th style="${columnStyle}">Created</th>
         <th style="${columnStyle}">Status</th>
       </tr>
       ${bugs.map(b => `<tr>
-        <td style="${columnStyle}">${typeToEmoji(b.getType())}</td>
+        <td style="${columnStyle}">${formatType(b.getType())}</td>
         <td>${formatComponentPathSpan(b)}</td>
         <td>${formatBugSummaryLink(b)}</td>
         <td style="${columnStyle}">${b.getMeTooCount()}</td>
-        <td style="${columnStyle}">${formatCreatedTime(b.getCreatedTime())}</td>
-        <td style="${columnStyle}">${b.getStatus()}</td>
+        <td style="${columnStyle}">${[formatStatus(b.getStatus()), formatBlocker(b)].join(' ')}</td>
       </tr>`).join('')}
     </mj-table>`
 }
@@ -266,6 +252,14 @@ function formatComponentPathSpan(bug: GoogleAppsScript.Buganizer.Bug): string {
     return `<span title="${componentPath.join(' &gt; ')}">${[componentPath[0], "...", componentPath[componentPath.length - 1]].join(' &gt; ').replace("Locked", "").trim()}</span>`;
 }
 
+function formatBlocker(bug: GoogleAppsScript.Buganizer.Bug): string {
+    const dependsOn = bug.getDependsOn();
+    if (dependsOn.length === 0) {
+        return '';
+    }
+
+    return `<a href="${new BuganizerQuery(`blockingid:${bug.getId()}`).link()}" title="Blocked by: ${bug.getDependsOn().join(', ')}" target="_blank">🛑</a>`;
+}
 
 function typeToEmoji(type: string) {
     switch (type) {
@@ -277,11 +271,40 @@ function typeToEmoji(type: string) {
             return '💻';
         default:
             return '🤔';
-
     }
 }
 
+function formatType(type: string) {
+    return `<span title="${type}">${typeToEmoji(type)}</span>`;
+}
+
+function statusToEmoji(status: string) {
+    switch (status.toLowerCase()) {
+        case 'new':
+        case 'assigned':
+            return '🆕';
+        case 'accepted':
+            return '🚧';
+        case 'fixed':
+        case 'verified':
+            return '✅';
+        case 'intended_behavior':
+        case 'not_reproducible':
+        case 'infeasible':
+        case 'will_not_fix':
+            return '🚫';
+        case 'duplicate':
+            return '🔄';
+        case 'obsolete':
+            return '🪦';
+        default:
+            console.error(`Unknown status: ${status}`);
+            return '❓'
+    }
+}
+
+function formatStatus(status: string) {
+    return `<span title="${status}">${statusToEmoji(status)}</span>`;
+}
+
 globalThis.buildHtml = buildHtml;
-
-
-
