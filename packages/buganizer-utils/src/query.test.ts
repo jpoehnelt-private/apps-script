@@ -96,6 +96,31 @@ describe('BuganizerQuery', () => {
         });
     });
 
+    describe('type helpers', () => {
+        it('isFeatureRequest should add equals condition with feature request', () => {
+            const q = query.isFeatureRequest();
+            expect(q.toString()).toBe('foo:bar type:feature_request');
+        });
+
+        it('isBug should add equals condition with bug', () => {
+            const q = query.isBug();
+            expect(q.toString()).toBe('foo:bar type:bug');
+        });
+    });
+
+    describe('component', () => {
+        it('should add component condition', () => {
+            const q = query.isComponent('1234');
+            expect(q.toString()).toBe('foo:bar componentid:1234');
+        });
+
+        it('should add component condition recursive', () => {
+            const q = query.isComponent('1234', true);
+            expect(q.toString()).toBe('foo:bar componentid:1234+');
+        });
+
+    });
+
     describe('method chaining', () => {
         it('should support method chaining', () => {
             const q = query.and('condition:1').not('condition:2').eq('field', 'value');

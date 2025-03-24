@@ -14,7 +14,7 @@ interface SearchOptions {
 }
 
 export class BuganizerQuery {
-    constructor(protected query: string) { }
+    constructor(protected query: string = '') { }
 
     clone(): this {
         const other = Object.create(Object.getPrototypeOf(this));
@@ -68,12 +68,24 @@ export class BuganizerQuery {
         return this.eq('status', status);
     }
 
-    isComponent(component: string): this {
-        return this.eq('componentid', component);
+    isComponent(component: string, recursive?: boolean): this {
+        return this.eq('componentid', `${component}${recursive ? '+' : ''}`);
     }
 
     isAssignee(assignee: string): this {
         return this.eq('assignee', assignee);
+    }
+
+    isFeatureRequest(): this {
+        return this.eq('type', 'feature_request');
+    }
+
+    isBug(): this {
+        return this.eq('type', 'bug');
+    }
+
+    isOpen(): this {
+        return this.isStatus('open');
     }
 
     toString(): string {
@@ -123,8 +135,8 @@ export class BuganizerQuery {
 
 
 export class WorkspaceQuery extends BuganizerQuery {
-    constructor(query: string) {
-        super(`componentid:191625+ ${query}`);
+    constructor(query: string = '') {
+        super(and(`componentid:191625+`, query));
     }
 
     minQuality(value: number): this {
