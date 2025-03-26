@@ -1,0 +1,19 @@
+{
+  "name": "@repository/memoize",
+  "version": "0.1.0",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "author": "Justin Poehnelt <jpoehnelt@google.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/buganizer": "workspace:*",
+    "@types/google-apps-script": "^1.0.97",
+    "vitest": "^3.0.9"
+  },
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}
