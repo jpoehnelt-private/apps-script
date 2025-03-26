@@ -7,7 +7,7 @@ import {
 
 export function generate(
   payload: GenerateContentRequest,
-  { MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string }
+  { MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string },
 ): GenerateContentResponse {
   const URL = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/us-central1/publishers/google/models/${MODEL}:generateContent`;
   const options = {
@@ -51,7 +51,7 @@ function camelToSnake(obj: any): any {
 }
 
 export function isFunctionCallPart(
-  part: Content["parts"][number]
+  part: Content["parts"][number],
 ): part is FunctionCallPart {
   return "functionCall" in part;
 }

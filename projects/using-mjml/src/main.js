@@ -63,9 +63,11 @@ function main() {
       </mj-column>
     </mj-section>
   </mj-body>
-</mjml>`
+</mjml>`,
   );
 
   // send html email
-  GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Test", '', { htmlBody: html });
+  GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Test", "", {
+    htmlBody: html,
+  });
 }

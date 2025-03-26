@@ -25,6 +25,6 @@ const passThroughFiles = ["main.js", "appsscript.json"];
 
 await Promise.all(
   passThroughFiles.map(async (file) =>
-    fs.promises.copyFile(path.join(sourceRoot, file), path.join(outdir, file))
-  )
+    fs.promises.copyFile(path.join(sourceRoot, file), path.join(outdir, file)),
+  ),
 );

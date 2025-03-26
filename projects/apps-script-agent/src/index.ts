@@ -24,7 +24,7 @@ const SYSTEM_INSTRUCTION = {
 const TOOLS = [
   {
     functionDeclarations: Object.values(FUNCTIONS).map(
-      (fn) => fn.declaration
+      (fn) => fn.declaration,
     ) as FunctionDeclaration[],
   },
 ];
@@ -52,14 +52,14 @@ function main_({ MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string }) {
     let isDone = false;
 
     const functionCalls = Object.fromEntries(
-      Object.keys(FUNCTIONS).map((key) => [key, [] as any[]])
+      Object.keys(FUNCTIONS).map((key) => [key, [] as any[]]),
     );
 
     let shouldPlan = true;
 
     while (!isDone) {
       const allowedFunctionNames: string[] = Object.keys(FUNCTIONS).filter(
-        (key) => functionCalls[key].length === 0
+        (key) => functionCalls[key].length === 0,
       );
 
       let mode: FunctionCallingMode = "ANY" as FunctionCallingMode;
@@ -70,7 +70,7 @@ function main_({ MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string }) {
           parts: [
             {
               text: `Generate a multistep plan for this email thread using only the available tools: ${JSON.stringify(
-                TOOLS
+                TOOLS,
               )}`,
             },
           ],
@@ -96,7 +96,7 @@ function main_({ MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string }) {
             },
           },
         },
-        { MODEL, PROJECT_ID }
+        { MODEL, PROJECT_ID },
       );
 
       if (!output.candidates?.[0]) {
@@ -128,7 +128,7 @@ function main_({ MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string }) {
           }
 
           console.log(
-            `${thread.getFirstMessageSubject()} - Calling ${name} with ${JSON.stringify(args)}`
+            `${thread.getFirstMessageSubject()} - Calling ${name} with ${JSON.stringify(args)}`,
           );
 
           const content = fn(schema.parse(args) as any, {

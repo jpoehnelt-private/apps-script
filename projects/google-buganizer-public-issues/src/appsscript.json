@@ -3,7 +3,5 @@
   "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
-  "oauthScopes": [
-    "https://www.googleapis.com/auth/buganizer"
-  ]
+  "oauthScopes": ["https://www.googleapis.com/auth/buganizer"]
 }

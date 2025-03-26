@@ -1,5 +1,5 @@
 declare global {
-    var _addBugsToDomainHotlists: (query: string) => void;
+  var _addBugsToDomainHotlists: (query: string) => void;
 }
 
-export { }
+export {};

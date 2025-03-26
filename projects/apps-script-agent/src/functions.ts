@@ -134,7 +134,7 @@ const APPLY_LABELS = z.object({
         ])
         .openapi({
           description: "A label name using hierarchy.",
-        })
+        }),
     )
     .openapi({
       description: "Labels to apply to a message",
@@ -144,7 +144,7 @@ const APPLY_LABELS = z.object({
 function getRecentInboxMessages() {
   return {
     threads: GmailApp.getInboxThreads(0, 10).map(
-      convertGmailAppThreadToPlainObject
+      convertGmailAppThreadToPlainObject,
     ),
   };
 }
@@ -154,7 +154,7 @@ function searchGmail({ queries }: z.infer<typeof SEARCH_GMAIL>) {
     return {
       query,
       results: GmailApp.search(query, 0, 10).map(
-        convertGmailAppThreadToPlainObject
+        convertGmailAppThreadToPlainObject,
       ),
     };
   });
@@ -162,7 +162,7 @@ function searchGmail({ queries }: z.infer<typeof SEARCH_GMAIL>) {
 
 function createDraftReply(
   { reply }: z.infer<typeof CREATE_DRAFT_REPLY>,
-  { threadId }: Context
+  { threadId }: Context,
 ) {
   const draft = GmailApp.getThreadById(threadId).createDraftReply(reply);
   return {
@@ -172,7 +172,7 @@ function createDraftReply(
 
 function markAsImportant(
   { important }: z.infer<typeof MARK_AS_IMPORTANT>,
-  { thread }: Context
+  { thread }: Context,
 ) {
   if (important) {
     thread.markImportant();
@@ -185,7 +185,7 @@ function markAsImportant(
 
 function applyLabels(
   { labelNames }: z.infer<typeof APPLY_LABELS>,
-  { threadId }: Context
+  { threadId }: Context,
 ) {
   const addLabelIds = labelNames
     .map((labelName) => labelName.split("/").map((label) => label.trim()))
@@ -200,7 +200,7 @@ function applyLabels(
         addLabelIds,
       },
       "me",
-      threadId
+      threadId,
     );
   } catch (e) {
     console.error(e as any);

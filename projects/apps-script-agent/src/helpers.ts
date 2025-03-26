@@ -1,5 +1,5 @@
 export function convertGmailAppMessageToPlainObject(
-  message: GoogleAppsScript.Gmail.GmailMessage
+  message: GoogleAppsScript.Gmail.GmailMessage,
 ): {
   message: string;
   date: string;
@@ -28,7 +28,7 @@ export function convertGmailAppMessageToPlainObject(
 }
 
 export function convertGmailAppThreadToPlainObject(
-  thread: GoogleAppsScript.Gmail.GmailThread
+  thread: GoogleAppsScript.Gmail.GmailThread,
 ) {
   return {
     messages: thread.getMessages().map(convertGmailAppMessageToPlainObject),
@@ -38,7 +38,7 @@ export function convertGmailAppThreadToPlainObject(
 }
 
 export function serializeGmailAppThread(
-  thread: GoogleAppsScript.Gmail.GmailThread
+  thread: GoogleAppsScript.Gmail.GmailThread,
 ) {
   return JSON.stringify(convertGmailAppThreadToPlainObject(thread));
 }
@@ -48,17 +48,17 @@ export function _getGmailUserLabels(): GoogleAppsScript.Gmail.Schema.Label[] {
 }
 
 export function getDraftsForThreadId(
-  threadId: string
+  threadId: string,
 ): GoogleAppsScript.Gmail.Schema.Draft[] {
   return (Gmail?.Users?.Drafts?.list("me")?.drafts ?? []).filter(
-    (draft) => draft.message?.threadId === threadId
+    (draft) => draft.message?.threadId === threadId,
   );
 }
 
 export const getGmailUserLabels = memoize(_getGmailUserLabels, 5);
 
 export function createGmailUserLabelIfNotExists(
-  labelName: string
+  labelName: string,
 ): GoogleAppsScript.Gmail.Schema.Label | undefined {
   if (labelName.includes("/")) {
     const parent = labelName.split("/").slice(0, -1).join("/");
@@ -69,7 +69,7 @@ export function createGmailUserLabelIfNotExists(
   const label = labels.find(
     (label) =>
       label.name &&
-      label.name.trim().toLowerCase() === labelName.trim().toLowerCase()
+      label.name.trim().toLowerCase() === labelName.trim().toLowerCase(),
   );
 
   if (!label) {
@@ -78,7 +78,7 @@ export function createGmailUserLabelIfNotExists(
         {
           name: labelName,
         },
-        "me"
+        "me",
       ) as GoogleAppsScript.Gmail.Schema.Label;
     } catch (e) {
       console.log(`Failed to create label ${labelName}`);
@@ -123,7 +123,7 @@ function hash(str: string, algorithm = Utilities.DigestAlgorithm.MD5) {
 export function memoize<T extends (...args: any[]) => any>(
   func: T,
   ttl = 600,
-  cache = CacheService.getScriptCache()
+  cache = CacheService.getScriptCache(),
 ): (...args: any[]) => ReturnType<T> {
   return (...args: any[]) => {
     // consider a more robust input to the hash function to handler complex
