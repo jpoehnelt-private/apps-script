@@ -55,6 +55,7 @@ declare namespace GoogleAppsScript {
                 issueView: Buganizer.IssueView,
             ): Buganizer.Bug[];
             searchComponents(query: string): Buganizer.Component[];
+            searchHotlists(query: string): Buganizer.Hotlist[];
         }
 
         interface Bug {
