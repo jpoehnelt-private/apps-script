@@ -14,7 +14,7 @@ await esbuild.build({
   format: "esm",
   plugins: [],
   inject: ["polyfill.js"],
-  minify: true,
+  minify: false,
   banner: { js: "// Generated code DO NOT EDIT\n" },
   entryNames: "zzz_bundle_[name]",
   chunkNames: "zzz_chunk_[name]",

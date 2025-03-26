@@ -1,3 +1,5 @@
+import { WORKSPACE_CUSTOM_FIELDS } from "./custom-fields.js";
+
 const EQ = ":";
 const GT = ">";
 const GTE = ">=";
@@ -7,13 +9,6 @@ const NEQ = "-";
 const OR = " | ";
 const AND = " ";
 
-interface SearchOptions {
-  sort?: (
-    a: GoogleAppsScript.Buganizer.Bug,
-    b: GoogleAppsScript.Buganizer.Bug,
-  ) => number;
-  limit?: number;
-}
 
 export class BuganizerQuery {
   constructor(protected query: string = "") {}
@@ -149,16 +144,6 @@ export class BuganizerQuery {
 }
 
 export class WorkspaceQuery extends BuganizerQuery {
-  static CUSTOM_FIELDS = {
-    isActionable: "1388909",
-    isDeveloperIssue: "1388852",
-    isEnglish: "1388884",
-    status: "1245093",
-    tags: "1172495",
-    qualityScore: "1388853",
-    tagged: "1385984",
-    suggestedComponent: "1388836",
-  };
   constructor(query: string = "") {
     super(and(`componentid:191625+`, query));
   }
@@ -182,21 +167,21 @@ export class WorkspaceQuery extends BuganizerQuery {
   // Custom Fields
   isActionable(bool: boolean): this {
     return this.eq(
-      this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.isActionable),
+      this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.isActionable),
       bool ? 1 : 0,
     );
   }
 
   isDeveloperIssue(bool: boolean): this {
     return this.eq(
-      this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.isDeveloperIssue),
+      this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.isDeveloperIssue),
       bool ? 1 : 0,
     );
   }
 
   isEnglish(bool: boolean): this {
     return this.eq(
-      this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.isEnglish),
+      this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.isEnglish),
       bool ? 1 : 0,
     );
   }
@@ -211,30 +196,30 @@ export class WorkspaceQuery extends BuganizerQuery {
       | "unblocked",
   ): this {
     return this.eq(
-      this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.status),
+      this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.status),
       state,
     );
   }
 
   isTaggedWith(tag: string): this {
-    return this.eq(this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.tags), tag);
+    return this.eq(this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.tags), tag);
   }
 
   isTaggedWithAny(tags: string[]): this {
     return this.and(
-      `${this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.tags)}${EQ}${or(...tags)}`,
+      `${this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.tags)}${EQ}${or(...tags)}`,
     );
   }
 
   isTaggedWithAll(tags: string[]): this {
     return this.and(
-      `${this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.tags)}${EQ}(${and(...tags)})`,
+      `${this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.tags)}${EQ}(${and(...tags)})`,
     );
   }
 
   isTaggedWithNone(tags: string[]): this {
     return this.not(
-      `${this.customFieldKey(WorkspaceQuery.CUSTOM_FIELDS.tags)}${EQ}${or(...tags)}`,
+      `${this.customFieldKey(WORKSPACE_CUSTOM_FIELDS.tags)}${EQ}${or(...tags)}`,
     );
   }
 }
@@ -264,6 +249,7 @@ function not(query: string | BuganizerQuery): string {
 
   return `${NEQ}${q}`;
 }
+
 
 type Direction = "ASC" | "DESC";
 
