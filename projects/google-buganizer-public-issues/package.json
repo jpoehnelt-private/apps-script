@@ -1,0 +1,24 @@
+{
+  "name": "@repository/google-buganizer-public-issues",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "node build.js",
+    "check": "tsc --noEmit",
+    "push": "clasp push -f"
+  },
+  "author": "Justin Poehnelt <justin.poehnelt@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@repository/buganizer-utils": "workspace:*",
+    "@repository/memoize": "workspace:*",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.0.2-alpha",
+    "@types/google-apps-script": "^1.0.97",
+    "@types/buganizer": "workspace:*",
+    "esbuild": "^0.25.0"
+  },
+  "type": "module",
+  "private": true
+}
