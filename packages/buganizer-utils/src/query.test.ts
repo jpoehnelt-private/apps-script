@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BuganizerQuery, WorkspaceQuery } from "./query.js";
 
-// Mock the global BuganizerApp
-global.BuganizerApp = {
+// Mock the global BuganizerApp using type assertions to avoid TypeScript errors
+(globalThis as any).BuganizerApp = {
 	searchBugs: vi.fn(),
 } as unknown as GoogleAppsScript.Buganizer.BuganizerApp;
 
@@ -142,12 +142,14 @@ describe("BuganizerQuery", () => {
 				{ getMeTooCount: () => 10 },
 			] as unknown as GoogleAppsScript.Buganizer.Bug[];
 			(
-				global.BuganizerApp.searchBugs as unknown as ReturnType<typeof vi.fn>
+				(globalThis as any).BuganizerApp.searchBugs as ReturnType<typeof vi.fn>
 			).mockReturnValue(mockBugs);
 
 			const result = BuganizerQuery.search("foo:bar");
 
-			expect(global.BuganizerApp.searchBugs).toHaveBeenCalledWith("foo:bar");
+			expect((globalThis as any).BuganizerApp.searchBugs).toHaveBeenCalledWith(
+				"foo:bar",
+			);
 			expect(result.length).toBe(2);
 		});
 	});
