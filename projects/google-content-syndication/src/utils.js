@@ -1,5 +1,5 @@
 function canonicalUrl(id) {
-  return `https://www.youtube.com/watch?v=${id}`;
+	return `https://www.youtube.com/watch?v=${id}`;
 }
 
 /**
@@ -7,29 +7,29 @@ function canonicalUrl(id) {
  * @returns {[string]}
  */
 function filteredTags(tags) {
-  tags = tags
-    .filter(
-      (tag) =>
-        !tag.toLowerCase().startsWith("google workspace") &&
-        !["google", "google workspace", "workspace developer"].includes(
-          tag.toLowerCase()
-        )
-    )
-    .map((tag) => tag.replace(/^google /i, ""));
+	tags = tags
+		.filter(
+			(tag) =>
+				!tag.toLowerCase().startsWith("google workspace") &&
+				!["google", "google workspace", "workspace developer"].includes(
+					tag.toLowerCase(),
+				),
+		)
+		.map((tag) => tag.replace(/^google /i, ""));
 
-  tags = [...new Set(tags)].filter((tag) => {
-    for (const otherTag of tags) {
-      if (
-        tag !== otherTag &&
-        otherTag.toLowerCase().includes(tag.toLowerCase())
-      ) {
-        return false;
-      }
-    }
-    return true;
-  });
+	tags = [...new Set(tags)].filter((tag) => {
+		for (const otherTag of tags) {
+			if (
+				tag !== otherTag &&
+				otherTag.toLowerCase().includes(tag.toLowerCase())
+			) {
+				return false;
+			}
+		}
+		return true;
+	});
 
-  return tags;
+	return tags;
 }
 
 /**
@@ -42,8 +42,8 @@ function filteredTags(tags) {
  * @returns {string} The base64 encoded hash of the string.
  */
 function hash(str, algorithm = Utilities.DigestAlgorithm.MD5) {
-  const digest = Utilities.computeDigest(algorithm, str);
-  return Utilities.base64Encode(digest);
+	const digest = Utilities.computeDigest(algorithm, str);
+	return Utilities.base64Encode(digest);
 }
 
 /**
@@ -64,17 +64,16 @@ function hash(str, algorithm = Utilities.DigestAlgorithm.MD5) {
  * cached(4, 5, 6); // A new result will be calculated and cached
  */
 function memoize(func, ttl = 600, cache = CacheService.getScriptCache()) {
-  return (...args) => {
-    // consider a more robust input to the hash function to handler complex
-    // types such as functions, dates, and regex
-    const key = hash(JSON.stringify([func.toString(), ...args]));
-    const cached = cache.get(key);
-    if (cached != null) {
-      return JSON.parse(cached);
-    } else {
-      const result = func(...args);
-      cache.put(key, JSON.stringify(result), ttl);
-      return result;
-    }
-  };
+	return (...args) => {
+		// consider a more robust input to the hash function to handler complex
+		// types such as functions, dates, and regex
+		const key = hash(JSON.stringify([func.toString(), ...args]));
+		const cached = cache.get(key);
+		if (cached != null) {
+			return JSON.parse(cached);
+		}
+		const result = func(...args);
+		cache.put(key, JSON.stringify(result), ttl);
+		return result;
+	};
 }

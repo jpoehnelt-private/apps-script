@@ -12,17 +12,18 @@
     "prepare": "husky",
     "biome": "biome check --no-errors-on-unmatched",
     "prettier": "prettier --check --ignore-path .config/.prettierignore --ignore-path .gitignore",
-    "format": "pnpm prettier . && pnpm biome --write .",
+    "format": "pnpm prettier --write . && pnpm biome --unsafe --fix .",
     "lint": "pnpm prettier --check . && pnpm biome .",
     "clasp": "@google/clasp"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.28.1",
+    "@google/clasp": "3.0.2-alpha",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
-    "@google/clasp": "3.0.2-alpha",
+    "prettier-plugin-svelte": "^3.3.3",
     "turbo": "^2.4.4",
     "typescript": "catalog:"
   },

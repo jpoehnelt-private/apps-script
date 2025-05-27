@@ -41,16 +41,14 @@ The core functionality is generating embeddings from text. Here's how to impleme
  * @param {string|string[]} text - The text to generate embeddings for.
  * @returns {number[][]} - The generated embeddings.
  */
-function batchedEmbeddings_(
-  text,
-  { model = "text-embedding-005" } = {}
-) {
+function batchedEmbeddings_(text, { model = "text-embedding-005" } = {}) {
   if (!Array.isArray(text)) {
     text = [text];
   }
 
   const token = ScriptApp.getOAuthToken();
-  const PROJECT_ID = PropertiesService.getScriptProperties().getProperty("PROJECT_ID");
+  const PROJECT_ID =
+    PropertiesService.getScriptProperties().getProperty("PROJECT_ID");
   const REGION = "us-central1";
 
   const requests = text.map((content) => ({
@@ -131,7 +129,6 @@ You might be wondering why `Hello Justin` is ranked lower than `Lorem ipsum ...`
 
 The full matrix of similarities is:
 
-
 ### Step 4: Building a Simple Semantic Search
 
 Here's how to create a basic semantic search function:
@@ -140,19 +137,19 @@ Here's how to create a basic semantic search function:
 function semanticSearch(query, corpus) {
   // Generate embedding for the query
   const queryEmbedding = batchedEmbeddings_([query])[0];
-  
+
   // Create or use existing index
   const index = corpus.map((text) => ({
     text,
     embedding: batchedEmbeddings_([text])[0],
   }));
-  
+
   // Calculate similarities
   const results = index.map(({ text, embedding }) => ({
     text,
     similarity: similarity_(embedding, queryEmbedding),
   }));
-  
+
   // Sort by similarity (highest first)
   return results.sort((a, b) => b.similarity - a.similarity);
 }
@@ -176,7 +173,7 @@ You can build a custom function that allows users to search through data in a sp
 function SEMANTIC_SEARCH(query, dataRange, limit = 5) {
   const corpus = dataRange.getValues().flat().filter(Boolean);
   const results = semanticSearch(query, corpus);
-  
+
   return results
     .slice(0, limit)
     .map(({ text, similarity }) => [text, similarity]);
@@ -194,17 +191,21 @@ You can use embeddings to automatically categorize documents:
  * @param {Array<string>} categories List of possible categories
  * @return {string} The most similar category
  */
-function classifyDocument(document = "I love dogs", categories = ["Software", "Animal", "Food"]) {
+function classifyDocument(
+  document = "I love dogs",
+  categories = ["Software", "Animal", "Food"],
+) {
   const docEmbedding = batchedEmbeddings_([document])[0];
   const categoryEmbeddings = batchedEmbeddings_(categories);
-  
+
   const similarities = categoryEmbeddings.map((catEmbedding, index) => ({
     category: categories[index],
-    similarity: similarity_(docEmbedding, catEmbedding)
+    similarity: similarity_(docEmbedding, catEmbedding),
   }));
-  
+
   // Return the most similar category
-  const results = similarities.sort((a, b) => b.similarity - a.similarity)[0].category;
+  const results = similarities.sort((a, b) => b.similarity - a.similarity)[0]
+    .category;
   console.log(results);
   return results;
 }

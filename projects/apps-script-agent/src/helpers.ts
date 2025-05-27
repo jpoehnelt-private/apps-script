@@ -1,92 +1,92 @@
 export function convertGmailAppMessageToPlainObject(
-  message: GoogleAppsScript.Gmail.GmailMessage,
+	message: GoogleAppsScript.Gmail.GmailMessage,
 ): {
-  message: string;
-  date: string;
-  subject: string;
-  from: string;
-  to: string;
-  cc: string;
-  bcc: string;
-  messageId: string;
-  labels?: string[];
+	message: string;
+	date: string;
+	subject: string;
+	from: string;
+	to: string;
+	cc: string;
+	bcc: string;
+	messageId: string;
+	labels?: string[];
 } {
-  const labels = getGmailUserLabels();
-  return {
-    message: message.getPlainBody(),
-    messageId: message.getId(),
-    date: message.getDate().toISOString(),
-    subject: message.getSubject(),
-    from: message.getFrom(),
-    to: message.getTo(),
-    cc: message.getCc(),
-    bcc: message.getBcc(),
-    labels: (Gmail?.Users?.Messages?.get("me", message.getId())?.labelIds ?? [])
-      .map((labelId) => labels.find((label) => label.id === labelId)?.name)
-      .filter(Boolean) as string[],
-  };
+	const labels = getGmailUserLabels();
+	return {
+		message: message.getPlainBody(),
+		messageId: message.getId(),
+		date: message.getDate().toISOString(),
+		subject: message.getSubject(),
+		from: message.getFrom(),
+		to: message.getTo(),
+		cc: message.getCc(),
+		bcc: message.getBcc(),
+		labels: (Gmail?.Users?.Messages?.get("me", message.getId())?.labelIds ?? [])
+			.map((labelId) => labels.find((label) => label.id === labelId)?.name)
+			.filter(Boolean) as string[],
+	};
 }
 
 export function convertGmailAppThreadToPlainObject(
-  thread: GoogleAppsScript.Gmail.GmailThread,
+	thread: GoogleAppsScript.Gmail.GmailThread,
 ) {
-  return {
-    messages: thread.getMessages().map(convertGmailAppMessageToPlainObject),
-    threadId: thread.getId(),
-    drafts: getDraftsForThreadId(thread.getId()),
-  };
+	return {
+		messages: thread.getMessages().map(convertGmailAppMessageToPlainObject),
+		threadId: thread.getId(),
+		drafts: getDraftsForThreadId(thread.getId()),
+	};
 }
 
 export function serializeGmailAppThread(
-  thread: GoogleAppsScript.Gmail.GmailThread,
+	thread: GoogleAppsScript.Gmail.GmailThread,
 ) {
-  return JSON.stringify(convertGmailAppThreadToPlainObject(thread));
+	return JSON.stringify(convertGmailAppThreadToPlainObject(thread));
 }
 
 export function _getGmailUserLabels(): GoogleAppsScript.Gmail.Schema.Label[] {
-  return (Gmail?.Users?.Labels?.list("me")?.labels ?? []).filter(Boolean);
+	return (Gmail?.Users?.Labels?.list("me")?.labels ?? []).filter(Boolean);
 }
 
 export function getDraftsForThreadId(
-  threadId: string,
+	threadId: string,
 ): GoogleAppsScript.Gmail.Schema.Draft[] {
-  return (Gmail?.Users?.Drafts?.list("me")?.drafts ?? []).filter(
-    (draft) => draft.message?.threadId === threadId,
-  );
+	return (Gmail?.Users?.Drafts?.list("me")?.drafts ?? []).filter(
+		(draft) => draft.message?.threadId === threadId,
+	);
 }
 
 export const getGmailUserLabels = memoize(_getGmailUserLabels, 5);
 
 export function createGmailUserLabelIfNotExists(
-  labelName: string,
+	labelName: string,
 ): GoogleAppsScript.Gmail.Schema.Label | undefined {
-  if (labelName.includes("/")) {
-    const parent = labelName.split("/").slice(0, -1).join("/");
-    createGmailUserLabelIfNotExists(parent);
-  }
+	if (labelName.includes("/")) {
+		const parent = labelName.split("/").slice(0, -1).join("/");
+		createGmailUserLabelIfNotExists(parent);
+	}
 
-  const labels = getGmailUserLabels();
-  const label = labels.find(
-    (label) =>
-      label.name &&
-      label.name.trim().toLowerCase() === labelName.trim().toLowerCase(),
-  );
+	const labels = getGmailUserLabels();
+	const label = labels.find(
+		(label) =>
+			label.name &&
+			label.name.trim().toLowerCase() === labelName.trim().toLowerCase(),
+	);
 
-  if (!label) {
-    try {
-      return Gmail?.Users?.Labels?.create(
-        {
-          name: labelName,
-        },
-        "me",
-      ) as GoogleAppsScript.Gmail.Schema.Label;
-    } catch (e) {
-      console.log(`Failed to create label ${labelName}`);
-      return;
-    }
-  }
+	if (!label) {
+		try {
+			return Gmail?.Users?.Labels?.create(
+				{
+					name: labelName,
+				},
+				"me",
+			) as GoogleAppsScript.Gmail.Schema.Label;
+		} catch (e) {
+			console.log(`Failed to create label ${labelName}`);
+			return;
+		}
+	}
 
-  return label;
+	return label;
 }
 
 /**
@@ -99,8 +99,8 @@ export function createGmailUserLabelIfNotExists(
  * @returns {string} The base64 encoded hash of the string.
  */
 function hash(str: string, algorithm = Utilities.DigestAlgorithm.MD5) {
-  const digest = Utilities.computeDigest(algorithm, str);
-  return Utilities.base64Encode(digest);
+	const digest = Utilities.computeDigest(algorithm, str);
+	return Utilities.base64Encode(digest);
 }
 
 /**
@@ -121,21 +121,20 @@ function hash(str: string, algorithm = Utilities.DigestAlgorithm.MD5) {
  * cached(4, 5, 6); // A new result will be calculated and cached
  */
 export function memoize<T extends (...args: any[]) => any>(
-  func: T,
-  ttl = 600,
-  cache = CacheService.getScriptCache(),
+	func: T,
+	ttl = 600,
+	cache = CacheService.getScriptCache(),
 ): (...args: any[]) => ReturnType<T> {
-  return (...args: any[]) => {
-    // consider a more robust input to the hash function to handler complex
-    // types such as functions, dates, and regex
-    const key = hash(JSON.stringify([func.toString(), ...args]));
-    const cached = cache.get(key);
-    if (cached != null) {
-      return JSON.parse(cached);
-    } else {
-      const result = func(...args);
-      cache.put(key, JSON.stringify(result), ttl);
-      return result;
-    }
-  };
+	return (...args: any[]) => {
+		// consider a more robust input to the hash function to handler complex
+		// types such as functions, dates, and regex
+		const key = hash(JSON.stringify([func.toString(), ...args]));
+		const cached = cache.get(key);
+		if (cached != null) {
+			return JSON.parse(cached);
+		}
+		const result = func(...args);
+		cache.put(key, JSON.stringify(result), ttl);
+		return result;
+	};
 }

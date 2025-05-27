@@ -1,5 +1,5 @@
 declare global {
-  var DEBUG: boolean | undefined;
+	var DEBUG: boolean | undefined;
 }
 
 export {};

@@ -19,5 +19,8 @@
 	"[shellscript]": {
 		"editor.defaultFormatter": "foxundermoon.shell-format"
 	},
-	"prettier.ignorePath": ".config/.prettierignore"
+	"prettier.ignorePath": ".config/.prettierignore",
+	"[svelte]": {
+		"editor.defaultFormatter": "svelte.svelte-vscode"
+	}
 }

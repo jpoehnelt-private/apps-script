@@ -6,12 +6,24 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"complexity": {
+				"noStaticOnlyClass": "warn",
+				"noForEach": "warn"
+			},
+			"style": {
+				"noParameterAssign": "warn",
+				"noUselessElse": "warn",
+				"noNonNullAssertion": "warn"
+			},
+			"suspicious": {
+				"noExplicitAny": "warn"
+			}
 		}
 	},
 	"files": {
-		"include": ["**/*.js", "**/*.ts", "**/*.json"],
-		"ignore": ["**/package.json"]
+		"include": ["**/*.js", "**/*.ts"],
+		"ignore": ["**/package.json", "**/generated/**"]
 	},
 	"vcs": {
 		"enabled": true,

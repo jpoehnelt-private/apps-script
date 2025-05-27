@@ -1,6 +1,6 @@
 function main() {
-  const { html } = mjml2html(
-    `<mjml>
+	const { html } = mjml2html(
+		`<mjml>
   <mj-body>
     <mj-raw>
       <!-- Company Header -->
@@ -64,10 +64,10 @@ function main() {
     </mj-section>
   </mj-body>
 </mjml>`,
-  );
+	);
 
-  // send html email
-  GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Test", "", {
-    htmlBody: html,
-  });
+	// send html email
+	GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Test", "", {
+		htmlBody: html,
+	});
 }

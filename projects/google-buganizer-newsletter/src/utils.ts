@@ -1,7 +1,7 @@
 export function serializeBug(bug: GoogleAppsScript.Buganizer.Bug) {
-  const title = bug.getSummary();
-  const description = bug.getFirstNote();
-  return `Id: ${bug.getId()}\nVote Count: ${bug.getMeTooCount()}\nTitle: ${title}\nCurrent Component: ${bug.getComponentPath().join("/")}\nDescription:\n\n${description}`;
+	const title = bug.getSummary();
+	const description = bug.getFirstNote();
+	return `Id: ${bug.getId()}\nVote Count: ${bug.getMeTooCount()}\nTitle: ${title}\nCurrent Component: ${bug.getComponentPath().join("/")}\nDescription:\n\n${description}`;
 }
 
 /**
@@ -14,8 +14,8 @@ export function serializeBug(bug: GoogleAppsScript.Buganizer.Bug) {
  * @returns {string} The base64 encoded hash of the string.
  */
 function hash(str: string, algorithm = Utilities.DigestAlgorithm.MD5) {
-  const digest = Utilities.computeDigest(algorithm, str);
-  return Utilities.base64Encode(digest);
+	const digest = Utilities.computeDigest(algorithm, str);
+	return Utilities.base64Encode(digest);
 }
 
 /**
@@ -36,47 +36,45 @@ function hash(str: string, algorithm = Utilities.DigestAlgorithm.MD5) {
  * cached(4, 5, 6); // A new result will be calculated and cached
  */
 export function memoize(
-  func: (...args: any[]) => any,
-  ttl = 600,
-  cache = CacheService.getScriptCache(),
+	func: (...args: any[]) => any,
+	ttl = 600,
+	cache = CacheService.getScriptCache(),
 ) {
-  return (...args: any[]) => {
-    // consider a more robust input to the hash function to handler complex
-    // types such as functions, dates, and regex
-    const key = hash(JSON.stringify([func.toString(), ...args]));
-    const cached = cache.get(key);
-    if (cached != null) {
-      return JSON.parse(cached);
-    } else {
-      const result = func(...args);
-      cache.put(key, JSON.stringify(result), ttl);
-      return result;
-    }
-  };
+	return (...args: any[]) => {
+		// consider a more robust input to the hash function to handler complex
+		// types such as functions, dates, and regex
+		const key = hash(JSON.stringify([func.toString(), ...args]));
+		const cached = cache.get(key);
+		if (cached != null) {
+			return JSON.parse(cached);
+		}
+		const result = func(...args);
+		cache.put(key, JSON.stringify(result), ttl);
+		return result;
+	};
 }
 
 export function gemini(
-  request: any,
-  model_id = "gemini-2.0-flash",
-  project_id = "workspace-devrel-issues",
+	request: any,
+	model_id = "gemini-2.0-flash",
+	project_id = "workspace-devrel-issues",
 ) {
-  const URL = `https://us-central1-aiplatform.googleapis.com/v1/projects/${project_id}/locations/us-central1/publishers/google/models/${model_id}:generateContent`;
+	const URL = `https://us-central1-aiplatform.googleapis.com/v1/projects/${project_id}/locations/us-central1/publishers/google/models/${model_id}:generateContent`;
 
-  Logger.log({ message: "vertex:generateContent", request, url: URL });
+	Logger.log({ message: "vertex:generateContent", request, url: URL });
 
-  const options = {
-    method: "post" as const,
-    headers: { Authorization: `Bearer ${ScriptApp.getOAuthToken()}` },
-    muteHttpExceptions: true,
-    contentType: "application/json",
-    payload: JSON.stringify(request),
-  };
+	const options = {
+		method: "post" as const,
+		headers: { Authorization: `Bearer ${ScriptApp.getOAuthToken()}` },
+		muteHttpExceptions: true,
+		contentType: "application/json",
+		payload: JSON.stringify(request),
+	};
 
-  const response = UrlFetchApp.fetch(URL, options);
+	const response = UrlFetchApp.fetch(URL, options);
 
-  if (response.getResponseCode() == 200) {
-    return JSON.parse(response.getContentText());
-  } else {
-    throw new Error(response.getContentText());
-  }
+	if (response.getResponseCode() === 200) {
+		return JSON.parse(response.getContentText());
+	}
+	throw new Error(response.getContentText());
 }

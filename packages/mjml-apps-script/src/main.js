@@ -7,5 +7,5 @@
  * @returns {object} result object.
  */
 function mjml2html(str, options) {
-  return globalThis.mjml2html_(str, options);
+	return globalThis.mjml2html_(str, options);
 }
