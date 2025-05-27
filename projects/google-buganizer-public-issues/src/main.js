@@ -14,3 +14,11 @@ function automaticallyEscalateBugs() {
 		createdWithin: 7,
 	});
 }
+
+function automaticallyFindDuplicates() {
+	globalThis._findDuplicates();
+}
+
+function automaticallyUpdateEmbeddings() {
+	globalThis._updateEmbeddings();
+}

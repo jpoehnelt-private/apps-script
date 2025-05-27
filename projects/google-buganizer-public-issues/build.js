@@ -10,8 +10,9 @@ await esbuild.build({
 	bundle: true,
 	outdir,
 	sourceRoot,
+	target: "es2015",
 	platform: "node",
-	format: "esm",
+	format: "iife",
 	plugins: [],
 	inject: ["polyfill.js"],
 	minify: false,
@@ -20,6 +21,12 @@ await esbuild.build({
 	chunkNames: "zzz_chunk_[name]",
 	// See mocks in https://github.com/mjmlio/mjml/tree/master/packages/mjml-browser
 });
+
+// // copy index.html from prerendered output of SvelteKit application
+// await fs.promises.copyFile(
+// 	path.join(".svelte-kit", "output", "prerendered", "pages", "index.html"),
+// 	path.join(outdir, "index.html"),
+// );
 
 const passThroughFiles = ["main.js", "appsscript.json"];
 

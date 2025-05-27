@@ -1,7 +1,33 @@
 {
-  "timeZone": "America/Denver",
-  "dependencies": {},
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "oauthScopes": ["https://www.googleapis.com/auth/buganizer"]
+	"timeZone": "America/Denver",
+	"dependencies": {
+		"enabledAdvancedServices": [
+			{
+				"userSymbol": "Plx",
+				"version": "v1",
+				"serviceId": "plx"
+			},
+			{
+				"userSymbol": "BigQuery",
+				"version": "v2",
+				"serviceId": "bigquery"
+			},
+			{
+				"userSymbol": "Drive",
+				"version": "v3",
+				"serviceId": "drive"
+			
+			}
+
+		]
+	},
+	"exceptionLogging": "STACKDRIVER",
+	"runtimeVersion": "V8",
+	"oauthScopes": [
+		"https://www.googleapis.com/auth/buganizer",
+		"https://www.googleapis.com/auth/cloud-platform",
+		"https://www.googleapis.com/auth/script.external_request",
+		"https://www.googleapis.com/auth/drive.file",
+		"https://www.googleapis.com/auth/plx"
+	]
 }
