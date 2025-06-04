@@ -14,8 +14,6 @@ export function generate(
 		);
 	}
 
-	console.log(JSON.stringify(payload.generationConfig.responseSchema, null, 2));
-
 	const URL = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/us-central1/publishers/google/models/${MODEL}:generateContent`;
 	const options = {
 		method: "post" as const,
