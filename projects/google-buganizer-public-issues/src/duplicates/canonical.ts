@@ -1,6 +1,7 @@
 import {
 	WORKSPACE_CUSTOM_FIELDS,
 	getCustomField,
+	isPublicWorkspaceDeveloperIssue,
 } from "@repository/buganizer-utils";
 
 export function determineCanonical(
@@ -14,6 +15,35 @@ export function determineCanonical(
 	}
 	if (b.getDuplicateOf() === a.getId()) {
 		return [a, b];
+	}
+
+	if (!a.isOpen() && !b.isOpen()) {
+		Logger.log(`b/${a.getId()} and b/${b.getId()} are both closed`);
+		return [undefined, undefined];
+	}
+
+	if (
+		isPublicWorkspaceDeveloperIssue(a) &&
+		!isPublicWorkspaceDeveloperIssue(b)
+	) {
+		return [a, b];
+	}
+
+	if (
+		!isPublicWorkspaceDeveloperIssue(a) &&
+		isPublicWorkspaceDeveloperIssue(b)
+	) {
+		return [b, a];
+	}
+
+	if (
+		!isPublicWorkspaceDeveloperIssue(a) &&
+		!isPublicWorkspaceDeveloperIssue(b)
+	) {
+		Logger.log(
+			`b/${a.getId()} and b/${b.getId()} are both not public workspace developer issues`,
+		);
+		return [undefined, undefined];
 	}
 
 	// check if either is blocked by another bug
@@ -53,10 +83,18 @@ export function determineCanonical(
 	}
 
 	// check delta of created time
-	if (
-		Math.abs(a.getCreatedTime().getTime() - b.getCreatedTime().getTime()) >
-		1000 * 60 * 60 * 24 * 5
-	) {
+	const delta = Math.abs(
+		a.getCreatedTime().getTime() - b.getCreatedTime().getTime(),
+	);
+
+	// if more than 2 years apart, return undefined
+	if (delta > 1000 * 60 * 60 * 24 * 365 * 2) {
+		Logger.log(`b/${a.getId()} and b/${b.getId()} are more than 2 years apart`);
+		return [undefined, undefined];
+	}
+
+	// if more than 5 days apart, return the older one
+	if (delta > 1000 * 60 * 60 * 24 * 5) {
 		if (a.getCreatedTime().getTime() < b.getCreatedTime().getTime()) {
 			return [a, b];
 		}
