@@ -20,18 +20,18 @@ if (!PROJECT_ID) {
 	throw new Error("Script property PROJECT_ID not found");
 }
 
-const embeddingsSchema = z.object({
+export const embeddingsSchema = z.object({
 	id: z.coerce.string(),
 	insertedAt: z.coerce.number(),
 	lastComment: z.coerce.number(),
-	embeddings: z.array(z.number()),
+	embeddings: z.array(z.coerce.number()),
 	componentId: z.string(),
 	componentPath: z.string(),
 	type: z.string(),
 	status: z.string(),
 });
 
-type EmbeddingsSchema = z.infer<typeof embeddingsSchema>;
+export type EmbeddingsSchema = z.infer<typeof embeddingsSchema>;
 
 function updateEmbeddings() {
 	const recentlyInserted = getEmbeddings({
@@ -224,13 +224,96 @@ function getEmbeddings({
 
 	return z
 		.array(embeddingsSchema.partial())
-		.parse(
-			rows.map((row) =>
-				Object.fromEntries(
-					schema.fields?.map((field, i) => [field?.name, row.f?.[i]?.v]) ?? [],
-				),
-			),
-		);
+		.parse(rows.map((row) => rowToObject(row, schema)));
+}
+
+export function search({ id }: { id: string }) {
+	const request = {
+		query: `SELECT
+  *
+FROM (
+  SELECT
+    id,
+    embeddings,
+    ML.DISTANCE(
+      t.embeddings,
+      (SELECT embeddings FROM \`workspace-devrel-issues.workspace_devrel_public_issues.embeddings_latest\` WHERE id = '${id}'),
+      'COSINE'
+    ) AS distance
+  FROM
+    \`workspace-devrel-issues.workspace_devrel_public_issues.embeddings_latest\` AS t
+  WHERE
+    t.id != '${id}'
+)
+WHERE
+  distance < 0.2
+ORDER BY
+  distance ASC
+LIMIT 10`,
+		useLegacySql: false,
+	};
+
+	console.log(request.query);
+
+	const jobId = BigQuery.Jobs.query(request, PROJECT_ID).jobReference?.jobId;
+
+	if (!jobId) {
+		throw new Error("Failed to get job ID");
+	}
+
+	while (!BigQuery.Jobs.getQueryResults(PROJECT_ID, jobId).jobComplete) {
+		Utilities.sleep(200);
+	}
+
+	const rows: GoogleAppsScript.BigQuery.Schema.TableRow[] = [];
+	let pageToken: string | undefined;
+	let schema: GoogleAppsScript.BigQuery.Schema.TableSchema | undefined;
+
+	while (true) {
+		const queryResults = BigQuery.Jobs.getQueryResults(PROJECT_ID, jobId, {
+			pageToken,
+		});
+		rows.push(...(queryResults.rows ?? []));
+
+		if (!schema) {
+			schema = queryResults.schema;
+		}
+
+		if (!pageToken) {
+			break;
+		}
+
+		pageToken = queryResults.pageToken;
+	}
+
+	if (!schema) {
+		throw new Error("Failed to get schema");
+	}
+
+	return z
+		.array(
+			embeddingsSchema
+				.pick({ id: true, embeddings: true })
+				.extend({ distance: z.coerce.number() })
+				.passthrough(),
+		)
+		.parse(rows.map((row) => rowToObject(row, schema)))
+		.filter((r) => r.distance < 0.25);
+}
+
+function rowToObject(
+	row: GoogleAppsScript.BigQuery.Schema.TableRow,
+	schema: GoogleAppsScript.BigQuery.Schema.TableSchema,
+) {
+	return Object.fromEntries(
+		schema.fields?.map((field, i) => {
+			if (field.mode === "REPEATED") {
+				// @ts-ignore
+				return [field?.name, row.f?.[i]?.v?.flatMap((v) => v.v)];
+			}
+			return [field?.name, row.f?.[i]?.v];
+		}) ?? [],
+	);
 }
 
 interface Projection {
@@ -240,65 +323,65 @@ interface Projection {
 	id: string;
 }
 
-function recentlyCommentedBugs_({
-	last = 0,
-	limit = 10,
-}: { last?: number; limit?: number }): {
-	issueId: string;
-	lastComment: string;
-}[] {
-	const request = {
-		queryRequest: {
-			query: {
-				text: `SELECT
-				  t.issue_id as issue_id,
-				  MAX(comments.modified) AS last_comment,
-				FROM
-				  buganizer.issuehistories.live AS t,
-				  UNNEST(t.comments) AS comments
-				LEFT JOIN buganizer.issuestatsfresh.live AS b
-				  ON t.issue_id = b.issue_id
-				LEFT JOIN buganizer.componentsfresh.live AS c
-				  ON b.component_id = CAST(c.component_id AS INT64)
-				WHERE
-				  EXISTS(SELECT 1 FROM UNNEST(c.component_id_path) p WHERE p = "191625")
-				  AND comments.modified > UNIX_MICROS(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1000 DAY))
-				  AND comments.modified > ${last}
-				  AND comments.user.user_type = 'PUBLIC'
-				  AND t.is_archived = FALSE
-				  AND t.is_restricted = FALSE
-				GROUP BY t.issue_id
-				ORDER BY last_comment
-				LIMIT ${limit}              
-				`,
-				engine: "F1",
-			},
-			parameters: {},
-		},
-	};
+// function recentlyCommentedBugs_({
+// 	last = 0,
+// 	limit = 10,
+// }: { last?: number; limit?: number }): {
+// 	issueId: string;
+// 	lastComment: string;
+// }[] {
+// 	const request = {
+// 		queryRequest: {
+// 			query: {
+// 				text: `SELECT
+// 				  t.issue_id as issue_id,
+// 				  MAX(comments.modified) AS last_comment,
+// 				FROM
+// 				  buganizer.issuehistories.live AS t,
+// 				  UNNEST(t.comments) AS comments
+// 				LEFT JOIN buganizer.issuestatsfresh.live AS b
+// 				  ON t.issue_id = b.issue_id
+// 				LEFT JOIN buganizer.componentsfresh.live AS c
+// 				  ON b.component_id = CAST(c.component_id AS INT64)
+// 				WHERE
+// 				  EXISTS(SELECT 1 FROM UNNEST(c.component_id_path) p WHERE p = "191625")
+// 				  AND comments.modified > UNIX_MICROS(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1000 DAY))
+// 				  AND comments.modified > ${last}
+// 				  AND comments.user.user_type = 'PUBLIC'
+// 				  AND t.is_archived = FALSE
+// 				  AND t.is_restricted = FALSE
+// 				GROUP BY t.issue_id
+// 				ORDER BY last_comment
+// 				LIMIT ${limit}
+// 				`,
+// 				engine: "F1",
+// 			},
+// 			parameters: {},
+// 		},
+// 	};
 
-	if (globalThis.DEBUG) {
-		console.log(request.queryRequest.query.text);
-	}
+// 	if (globalThis.DEBUG) {
+// 		console.log(request.queryRequest.query.text);
+// 	}
 
-	// @ts-ignore
-	let projection = Plx.Projections.create(request);
-	while (projection.state !== "done") {
-		Utilities.sleep(100);
-		projection = getProjection_(projection);
-	}
+// 	// @ts-ignore
+// 	let projection = Plx.Projections.create(request);
+// 	while (projection.state !== "done") {
+// 		Utilities.sleep(100);
+// 		projection = getProjection_(projection);
+// 	}
 
-	return Utilities.parseCsv(projection.data)
-		.slice(1)
-		.map((values) => ({
-			issueId: values[0],
-			lastComment: values[1],
-		}));
-}
+// 	return Utilities.parseCsv(projection.data)
+// 		.slice(1)
+// 		.map((values) => ({
+// 			issueId: values[0],
+// 			lastComment: values[1],
+// 		}));
+// }
 
-function getProjection_(projection: Projection): Projection {
-	// @ts-ignore
-	return Plx.Projections.get(projection.id, { token: projection.token });
-}
+// function getProjection_(projection: Projection): Projection {
+// 	// @ts-ignore
+// 	return Plx.Projections.get(projection.id, { token: projection.token });
+// }
 
 globalThis._updateEmbeddings = updateEmbeddings;

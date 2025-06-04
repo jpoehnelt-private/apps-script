@@ -15,10 +15,11 @@ function automaticallyEscalateBugs() {
 	});
 }
 
-function automaticallyFindDuplicates() {
-	globalThis._findDuplicates();
+function duplicationWorkflow() {
+	globalThis._updateEmbeddings();
+	globalThis._automaticallyCheckIfDuplicate();
 }
 
-function automaticallyUpdateEmbeddings() {
-	globalThis._updateEmbeddings();
+function duplicationWorkflowBackfill() {
+	globalThis._automaticallyCheckIfDuplicate(100);
 }

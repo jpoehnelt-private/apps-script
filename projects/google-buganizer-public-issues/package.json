@@ -10,13 +10,18 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@repository/buganizer-utils": "workspace:*",
+    "@repository/embeddings": "workspace:*",
     "@repository/memoize": "workspace:*",
-    "date-fns": "^4.1.0"
+    "@repository/vertex": "workspace:*",
+    "date-fns": "^4.1.0",
+    "lodash-es": "^4.17.21",
+    "zod": "^3.25.31"
   },
   "devDependencies": {
     "@google/clasp": "^3.0.2-alpha",
-    "@types/google-apps-script": "^1.0.97",
     "@types/buganizer": "workspace:*",
+    "@types/google-apps-script": "catalog:",
+    "@types/lodash-es": "^4.17.12",
     "esbuild": "^0.25.0"
   },
   "type": "module",

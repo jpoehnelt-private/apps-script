@@ -2,11 +2,11 @@ import type { EscalateOptions } from "./escalate.js";
 
 declare global {
 	var _addBugsToDomainHotlists: (query: string) => void;
+	var _automaticallyCheckIfDuplicate: () => void;
 	var _escalateBugs: (options: EscalateOptions) => void;
-	var DEBUG: boolean | undefined;
-	var _findDuplicates: () => void;
-	var PROJECT_ID: string;
 	var _updateEmbeddings: () => void;
+	var DEBUG: boolean | undefined;
+	var PROJECT_ID: string;
 }
 
 // biome-ignore lint/complexity/noUselessEmptyExport: <explanation>
