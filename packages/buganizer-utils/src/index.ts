@@ -15,3 +15,7 @@ export function getComments(id: string): { user: string; comment: string }[] {
 			})),
 		);
 }
+
+export function getLink(id: string): string {
+	return `https://issuetracker.google.com/issues/${id}`;
+}
